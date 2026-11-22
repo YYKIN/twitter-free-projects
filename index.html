@@ -256,13 +256,13 @@
           <p class="kicker">监控看板</p>
           <h1>推特免费项目监控</h1>
         </div>
-        <p class="updated">页面更新 2026年11月22日 19:30<br>时区 Asia/Shanghai<br>项目扫描：2026年11月22日 17:20<br>余额查询：2026年11月22日 19:29<br>下一次定时扫描：今晚 21:00<br>本页每 60 秒自动刷新</p>
+        <p class="updated">页面更新 2026年11月22日 19:34<br>时区 Asia/Shanghai<br>项目扫描：2026年11月22日 17:20<br>余额查询：2026年11月22日 19:29<br>下一次定时扫描：今晚 21:00<br>本页每 60 秒自动刷新</p>
       </header>
       <nav class="tabs" aria-label="分类导航">
         <a href="#overview" data-view="overview">总览</a>
         <a href="#wallet" data-view="wallet">钱包余额</a>
-        <a href="#go" data-view="go">可参与 <span class="count">0</span></a>
-        <a href="#watch" data-view="watch">观望 <span class="count">4</span></a>
+        <a href="#go" data-view="go">可参与 <span class="count">1</span></a>
+        <a href="#watch" data-view="watch">观望 <span class="count">3</span></a>
         <a href="#reject" data-view="reject">排除 <span class="count">15</span></a>
         <a href="#joined" data-view="joined">已参与 <span class="count">0</span></a>
         <a href="#trades" data-view="trades">代币交易 <span class="count">0</span></a>
@@ -274,10 +274,10 @@
 
   <main class="wrap">
     <section id="view-overview" class="view" data-view="overview">
-      <div class="banner">资金已到账，目前只在 Robinhood Chain 上有余额。本次扫描仍没有项目达到可参与标准；通过筛选的项目不是铸造价未明、就是需要跨链，或官宣还不够。没有你的明确同意，不会签名或花费。本页不会编造收益数字。</div>
+      <div class="banner">资金已到账，目前只在 Robinhood Chain 上有余额。筛选已按新规则调整：要看项目方推特信用；当时免费可参与的可以参与，过程中若突然改收费就立刻停下。按此复核后，Thinkers / NFTX 的白名单登记列为可参与（只做免费登记，不连不明钱包，铸造若收费就停）。没有你的明确同意，不会签名或花费。本页不会编造收益数字。</div>
       <div class="metrics" aria-label="本次扫描结论">
-        <a class="metric go" href="#go"><b>0</b><span>可参与</span></a>
-        <a class="metric watch" href="#watch"><b>4</b><span>观望</span></a>
+        <a class="metric go" href="#go"><b>1</b><span>可参与</span></a>
+        <a class="metric watch" href="#watch"><b>3</b><span>观望</span></a>
         <a class="metric no" href="#reject"><b>15</b><span>排除（详表）</span></a>
         <div class="metric"><b>96</b><span>首轮去重帖子</span></div>
       </div>
@@ -295,10 +295,12 @@
         <h2>筛选规则</h2>
         <p>优先参与手续费便宜的网络。高 gas 网络（例如以太坊主网）必须有十足把握能赚钱才考虑。不可梭哈，必须留后路和 gas。约 30U 允许亏完，但手续费可能高过收益的单不做。</p>
         <ul>
-          <li>排除：假官推、貔貅或卖不出、危险授权（包括 setApprovalForAll、无限授权、来路不明的签名）</li>
+          <li>推特信用：要看项目方官号是否可核验，粉丝是否过少，账号是否过新，以及有没有多次发盘割人的记录。蓝标不等于官方，也不等于信用好。粉丝短期内涨得异常快、发帖极少却粉丝很多，也要当心。</li>
+          <li>免费可参与：当时确实免费（通常只需 gas）的，可以列为可参与。参与过程中如果突然要求收费、充值或额外付款，立刻停下，不再继续花那个钱，也不再追加授权。</li>
+          <li>排除：假官推、貔貅或卖不出、危险授权（包括 setApprovalForAll、无限授权、来路不明的签名或不明钱包插件）</li>
           <li>排除：付费活动伪装成免费、合约可被开发者随意铸或抽干</li>
-          <li>排除：gas、跨链或提现费用可能高过潜在收益</li>
-          <li>保留：有可核验的官推、官网或合约，参与成本低，开启时间明确，风险说得清</li>
+          <li>排除：gas、跨链或提现费用可能高过潜在收益；免费 mint 若先要跨链花钱，仍要先把这笔费用算清楚</li>
+          <li>保留：有可核验的官推、官网或合约，参与成本低，开启时间明确，风险说得清，项目方信用说得过去</li>
         </ul>
       </section>
       <section class="block">
@@ -390,24 +392,16 @@
 
     <section id="view-go" class="view" data-view="go">
       <h2>可参与</h2>
-      <div class="panel empty">
-        <strong>目前没有达到可参与标准的项目</strong>
-        本次扫描结论仍是 0 个。通过筛选的都还在观望：要么铸造价未明，要么需要跨链，要么官宣还不够。有符合标准的项目时，会写在这一栏，并说明免费还是收费、参与条件、开启时间和原因。
-      </div>
-    </section>
-
-    <section id="view-watch" class="view" data-view="watch">
-      <h2>观望</h2>
-      <p class="lede">有官方线索，但还不能安全参与。共 4 个，来自 2026年11月22日 17:20 的扫描。</p>
-      <article class="card watch" data-name="Thinkers / NFTX">
+      <p class="lede">按「当时免费的可以参与，中途改收费就停」复核后，目前 1 个：只建议做免费登记，不预付铸造费，也不连不明钱包。真正连钱包前仍要在对话里得到明确同意。</p>
+      <article class="card go" data-name="Thinkers / NFTX">
       <div class="card-top">
         <div>
           <h3>Thinkers / NFTX</h3>
           <p class="meta-line">Ink · 登记免费，铸造价未公布 · 白名单进行中；官方称股票挂钩 11月24日启动</p>
         </div>
-        <span class="badge watch">观望</span>
+        <span class="badge go">可参与</span>
       </div>
-      <p class="reason">官推已确认白名单，但铸造条件与授权风险尚未核清。</p>
+      <p class="reason">白名单登记本身免费，NFTX 官号信用相对够得上；只做免费登记，不连来路不明的钱包插件。铸造若后来收费，立刻停，先不铸。</p>
       <details open>
         <summary>详情</summary>
         <ul class="facts">
@@ -415,10 +409,17 @@
           <li><b>参与条件</b>NFTX Phase 1 白名单已开放，官方称 100 个名额。@ThinkersClub_ 与 @NFTX_ 转发了 @FlayerLabs 的说明：100 个名额给排名前 100，另 50 个从解锁全部 5 个房间的人中抽取。</li>
           <li><b>开启时间</b>白名单进行中。@NFTX_ 简介写股票挂钩 11月24日启动。</li>
           <li><b>官方来源</b><a href="https://nftx.io/thinkers" target="_blank" rel="noopener noreferrer">nftx.io/thinkers</a> · <a href="https://x.com/NFTX_/status/2123872601252470837" target="_blank" rel="noopener noreferrer">NFTX 官帖</a> · <a href="https://x.com/ThinkersClub_/status/2124410069605580918" target="_blank" rel="noopener noreferrer">ThinkersClub 帖</a></li>
-          <li><b>为何观望</b>项目和白名单有官方确认，Ink 也在主盯名单里。但铸造是否收费、是否要额外授权都还没核清。社区有人提醒白名单路径绑了 MoonGate，见 <a href="https://x.com/cute_bunnyies/status/2124416227393306799" target="_blank" rel="noopener noreferrer">这条帖子</a>。这条尚未独立验证，但足以先不去连钱包或授权。</li>
+          <li><b>推特信用</b>@NFTX_ 于 2020年9月15日注册，已存在约 6 年，商业认证，约 49,293 个粉丝、1,432 条帖，由 @FlayerLabs 搭建（该号 2023年7月5日注册，商业认证，约 2,374 个粉丝）。@ThinkersClub_ 则较新：2026年11月4日注册（到本次查询只有约 18 天），蓝色认证，约 6,371 个粉丝、75 条帖。NFTX 本身信用相对好，但 Thinkers 这个系列的专号还太新，参与时只认 NFTX 官网和官帖，不把新号或蓝标当成十足担保。</li>
+          <li><b>为何可参与（仅免费登记）</b>白名单登记本身免费，项目在 Ink，也在主盯名单里。按「当时免费的可以参与，中途改收费就停」的规则，现在只考虑去官网登记，不提前授权、也不预付铸造费。铸造价官方尚未说清，一旦要收费就立刻停下。社区有人提醒白名单路径绑了 MoonGate，见 <a href="https://x.com/cute_bunnyies/status/2124416227393306799" target="_blank" rel="noopener noreferrer">这条帖子</a>。这条尚未独立验证，但即使去登记，也只走 <a href="https://nftx.io/thinkers" target="_blank" rel="noopener noreferrer">nftx.io/thinkers</a>，不连来路不明的钱包插件，不签不明授权。没有对话里的明确同意，不会实际去连钱包。</li>
         </ul>
       </details>
     </article>
+    </section>
+
+    <section id="view-watch" class="view" data-view="watch">
+      <h2>观望</h2>
+      <p class="lede">有官方线索，但还不能安全参与。共 4 个，来自 2026年11月22日 17:20 的扫描。</p>
+      
 
     
 <article class="card watch">
@@ -429,7 +430,7 @@
         </div>
         <span class="badge watch">观望</span>
       </div>
-      <p class="reason">官方已宣布免费徽章，但主体是付费拆卡，且需跨到 HyperEVM。</p>
+      <p class="reason">徽章虽声称只付 gas，但要先跨到 HyperEVM，这已经要花钱；官号较新、粉丝不多，后续拆卡还要充值，按新规则这类收费步骤会直接停下。</p>
       <details open>
         <summary>详情</summary>
         <ul class="facts">
@@ -438,6 +439,7 @@
           <li><b>参与条件</b>在官方站点铸徽章后，可提前参与拆卡；白名单仍按抽签发放。游戏本身是链上拆卡。</li>
           <li><b>开启时间</b>官方 11月22日帖：11月26日 8 PM 起可拆卡，主帖未写时区。更早官方文章提到 11月25日首次拆卡。社区多按 Asia/Shanghai 20:00 理解。</li>
           <li><b>官方来源</b><a href="https://x.com/oripaxyz/status/2124378629744554100" target="_blank" rel="noopener noreferrer">Oripa 官帖</a> · <a href="https://oripa.xyz" target="_blank" rel="noopener noreferrer">oripa.xyz</a></li>
+          <li><b>推特信用</b>@oripaxyz 于 2026年10月21日注册，到本次查询约 1 个月，蓝色认证，约 3,085 个粉丝、116 条帖。账号偏新，粉丝也不算多；此前社区还有团队匿名、审计未出的讨论。信用只能算一般，还不足以让人先跨链去充值。</li>
           <li><b>为何观望</b>徽章确实是官方免费加 gas。但它的作用是让钱包去拆卡，社区称 12月2日前每地址充值上限 5,000U。资金计划放在 Base，过到 HyperEVM 还要算跨链和 HYPE gas。官号于 2026年10月21日注册，社区有研究贴提到团队匿名、审计未出。不会为了一枚徽章去先充值拆卡。</li>
         </ul>
       </details>
@@ -461,6 +463,7 @@
           <li><b>参与条件</b>先要已在白名单里。官方核验页：<a href="https://pixelora.fun/checker" target="_blank" rel="noopener noreferrer">pixelora.fun/checker</a>。白名单曾宣布于 11月18日 18:00 UTC 关闭，11月19日官方称已收到 8,650+ 个钱包。</li>
           <li><b>开启时间</b>官方 11月21日帖：11月23日在 OpenSea 铸造，未写具体时点和时区。</li>
           <li><b>官方来源</b><a href="https://x.com/PlayPixelora/status/2124184694917140530" target="_blank" rel="noopener noreferrer">Pixelora 官帖</a></li>
+          <li><b>推特信用</b>@PlayPixelora 于 2026年10月10日注册，到本次查询约 6 周，蓝色认证，约 4,206 个粉丝，但只有 30 条帖。账号偏新，发帖也不多。</li>
           <li><b>为何观望</b>这是官方活动，资金现在也在 Robinhood Chain 上。但白名单很可能已关闭，本钱包没有提前登记。官方只说到 11月23日在 OpenSea 铸造，未写具体时点。没有白名单资格就不会去铸。</li>
         </ul>
       </details>
@@ -475,7 +478,7 @@
         </div>
         <span class="badge watch">观望</span>
       </div>
-      <p class="reason">官号存在，但 mint 还未开放。</p>
+      <p class="reason">官方称免费 mint，但尚未开放；官号粉丝偏少、发帖很少，等公布时间和合约并再核信用后再看。</p>
       <details>
         <summary>详情</summary>
         <ul class="facts">
@@ -483,6 +486,7 @@
           <li><b>参与条件</b>官方仍写即将到来，本次未看到已开放铸造的官帖。</li>
           <li><b>开启时间</b>未公布。</li>
           <li><b>官方来源</b><a href="https://x.com/Niblekins" target="_blank" rel="noopener noreferrer">@Niblekins</a> · <a href="http://Niblekins.xyz" target="_blank" rel="noopener noreferrer">Niblekins.xyz</a></li>
+          <li><b>推特信用</b>@Niblekins 于 2026年9月12日注册，到本次查询约 2 个月，蓝色认证，约 1,429 个粉丝，但只有 7 条帖。粉丝偏少，发帖很少，信用还不够，先不等到官宣开启就要去参与。</li>
           <li><b>为何观望</b>官号可核验，但 mint 还没开。链不在主盯名单，等官方公布时间和合约后再评。</li>
         </ul>
       </details>
@@ -510,6 +514,7 @@
           <li><b>免费或收费</b>官方：mint 先免费，每个阶段涨 25 美分；另说开口价免费加 10 美分 gas。官方同时引导在 ETH 上兑换 $ZRO 再铸。</li>
           <li><b>参与条件</b>白名单 2,667，公开 777。核验器已上线，官方称最终核验器 11:30 AM UTC，即 19:30（Asia/Shanghai）。官方回复称 mint 尚未开放。</li>
           <li><b>官方来源</b><a href="https://x.com/ZeroGuysNFT/status/2124413682977587311" target="_blank" rel="noopener noreferrer">Zero Guys 官帖</a> · <a href="https://zeroguys.fun/mint" target="_blank" rel="noopener noreferrer">zeroguys.fun/mint</a></li>
+          <li><b>推特信用</b>@ZeroGuysNFT 于 2026年11月10日注册，到本次查询只有约 12 天，蓝色认证，却已有约 10,297 个粉丝，帖子只有 46 条。账号极新、粉丝涨得偏快，信用很弱。</li>
           <li><b>为何排除</b>社区有警告称该项目先承诺免费，后改为收 2 $ZRO（约 3 美元），并有点赞转发刷白名单痕迹，见 <a href="https://x.com/krishna__web3/status/2124430456229872069" target="_blank" rel="noopener noreferrer">这条帖子</a>。官方帖也证实要用 $ZRO、在以太坊主网铸造。官号 2026年11月10日才注册。主网 gas 加代币费用，对约 30U 资金不划算。</li>
         </ul>
       </details>
