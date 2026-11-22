@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="refresh" content="60">
+  <title>推特免费项目监控看板</title>
+  <style>
+    :root {
+      --bg: #f3f4f6;
+      --card: #ffffff;
+      --ink: #111827;
+      --muted: #4b5563;
+      --faint: #6b7280;
+      --line: #e5e7eb;
+      --line-strong: #d1d5db;
+      --link: #1d4ed8;
+      --go: #047857;
+      --go-bg: #ecfdf5;
+      --watch: #b45309;
+      --watch-bg: #fffbeb;
+      --no: #b91c1c;
+      --no-bg: #fef2f2;
+      --info: #1e40af;
+      --info-bg: #eff6ff;
+      --shadow: 0 1px 2px rgba(15, 23, 42, .06), 0 8px 24px rgba(15, 23, 42, .04);
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    html { color-scheme: light; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font: 16px/1.65 "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--link); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    a:hover { text-decoration-thickness: 2px; }
+    code, .mono {
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      font-size: .9em;
+      word-break: break-all;
+    }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 28px 20px 72px; }
+    header.top {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 12px 24px;
+      margin-bottom: 22px;
+    }
+    .kicker { margin: 0 0 4px; color: var(--faint); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: 28px; line-height: 1.25; letter-spacing: -.02em; }
+    .updated { color: var(--muted); font-size: 14px; text-align: right; }
+    .banner {
+      background: var(--info-bg);
+      border: 1px solid #dbeafe;
+      color: #1e3a8a;
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin: 0 0 20px;
+    }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .metric {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px 16px 14px;
+    }
+    .metric b { display: block; font-size: 34px; line-height: 1; letter-spacing: -.03em; }
+    .metric span { display: block; margin-top: 8px; color: var(--muted); font-size: 13px; }
+    .metric.go b { color: var(--go); }
+    .metric.watch b { color: var(--watch); }
+    .metric.no b { color: var(--no); }
+    .panel, .card, .block {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .panel { padding: 18px 18px 8px; margin-bottom: 20px; }
+    .panel h2, .block h2, .section-head h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+    .props { width: 100%; border-collapse: collapse; }
+    .props th, .props td { padding: 10px 0; border-top: 1px solid var(--line); vertical-align: top; text-align: left; }
+    .props tr:first-child th, .props tr:first-child td { border-top: 0; }
+    .props th { width: 7.5em; color: var(--muted); font-weight: 600; padding-right: 16px; }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 14px;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      padding: 10px 0;
+      background: color-mix(in srgb, var(--bg) 92%, transparent);
+      backdrop-filter: blur(8px);
+    }
+    .toolbar button {
+      appearance: none;
+      border: 1px solid var(--line-strong);
+      background: #fff;
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 7px 14px;
+      font: inherit;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .toolbar button[aria-pressed="true"] {
+      background: #111827;
+      border-color: #111827;
+      color: #fff;
+    }
+    .card {
+      padding: 16px 16px 14px;
+      margin-bottom: 12px;
+      border-left: 4px solid var(--line-strong);
+    }
+    .card.watch { border-left-color: #d97706; }
+    .card.no { border-left-color: #dc2626; }
+    .card.go { border-left-color: #059669; }
+    .card-top { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+    .card h3 { margin: 0 0 6px; font-size: 18px; }
+    .meta-line { margin: 0; color: var(--muted); font-size: 14px; }
+    .badge {
+      flex: 0 0 auto;
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .02em;
+    }
+    .badge.watch { background: var(--watch-bg); color: var(--watch); }
+    .badge.no { background: var(--no-bg); color: var(--no); }
+    .badge.go { background: var(--go-bg); color: var(--go); }
+    .reason { margin: 12px 0 0; }
+    details { margin-top: 10px; }
+    details summary {
+      cursor: pointer;
+      color: var(--link);
+      font-size: 14px;
+      user-select: none;
+    }
+    .facts { margin: 10px 0 0; padding: 0; list-style: none; }
+    .facts li { padding: 8px 0; border-top: 1px solid var(--line); }
+    .facts li:first-child { border-top: 0; }
+    .facts b { display: block; color: var(--muted); font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+    .copy {
+      appearance: none;
+      border: 1px solid var(--line-strong);
+      background: #fff;
+      border-radius: 8px;
+      padding: 2px 8px;
+      margin-left: 6px;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .block { padding: 18px; margin: 20px 0 0; }
+    .block h2 { margin-bottom: 8px; }
+    .block ul { margin: 8px 0 0; padding-left: 1.2em; }
+    .block li { margin: 4px 0; }
+    .links { display: grid; gap: 8px; margin-top: 10px; }
+    .links a {
+      display: block;
+      background: #f9fafb;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: inherit;
+      text-decoration: none;
+    }
+    .links a:hover { border-color: #93c5fd; background: #eff6ff; }
+    .links small { display: block; color: var(--faint); margin-top: 2px; }
+    footer { margin-top: 28px; color: var(--faint); font-size: 13px; }
+    .empty { display: none; padding: 28px; text-align: center; color: var(--muted); }
+    body.filter-go .card:not(.go),
+    body.filter-watch .card:not(.watch),
+    body.filter-no .card:not(.no) { display: none; }
+    body.filter-go #empty-go { display: block; }
+    @media (max-width: 800px) {
+      .metrics { grid-template-columns: 1fr 1fr; }
+      h1 { font-size: 24px; }
+      .updated { text-align: left; }
+      .props, .props tbody, .props tr, .props th, .props td { display: block; width: auto; }
+      .props th { padding: 10px 0 0; border-top: 0; }
+      .props td { padding: 2px 0 10px; border-top: 0; }
+      .props tr { border-top: 1px solid var(--line); padding-top: 4px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <div>
+        <p class="kicker">监控看板</p>
+        <h1>推特免费项目监控</h1>
+      </div>
+      <p class="updated">数据截止 2026年11月22日 19:06<br>时区 Asia/Shanghai<br>下一次定时扫描：今晚 21:00<br>本页每 60 秒自动刷新</p>
+    </header>
+
+    <div class="banner">资金已到账。本次扫描仍没有项目达到可参与标准；通过筛选的项目不是铸造价未明、就是需要跨链，或官宣还不够。没有你的明确同意，不会签名或花费。本页不会编造收益数字。</div>
+
+    <section class="metrics" aria-label="本次扫描结论">
+      <div class="metric go"><b>0</b><span>可参与</span></div>
+      <div class="metric watch"><b>4</b><span>观望</span></div>
+      <div class="metric no"><b>15</b><span>排除（详表）</span></div>
+      <div class="metric"><b>96</b><span>首轮去重帖子</span></div>
+    </section>
+
+    <section class="panel">
+      <h2>当前状态</h2>
+      <table class="props">
+        <tr><th>专用钱包</th><td><code id="wallet">0x55ffec51ee4583c4658dbd7675b4f16377D1e8f6</code> <button class="copy" type="button" data-copy="0x55ffec51ee4583c4658dbd7675b4f16377D1e8f6">复制</button></td></tr>
+        <tr><th>资金</th><td>已到账：Robinhood Chain 原生 ETH 0.016334052696760852。2026年11月22日 19:06（Asia/Shanghai）按 CoinGecko ETH 约 1709.64 美元计，大约 27.93 美元。WETH、USDG、USDC、USDT 等常见代币余额为 0。尚未向外花费。没有明确同意不会签名或交易。</td></tr>
+        <tr><th>建议提币网络</th><td>Base；同一地址在多条 EVM 链可用。</td></tr>
+        <tr><th>主盯链</th><td>Ethereum、Base、BSC、Arbitrum、Optimism、Polygon、Avalanche、Monad、Ink、Unichain</td></tr>
+        <tr><th>兼顾链</th><td>Linea、World Chain、Mantle、X Layer、Berachain、MegaETH、Scroll、zkSync Era、Soneium、Sonic；其他 EVM 链若出现热门免费项目也纳入。</td></tr>
+        <tr><th>扫描说明</th><td>这是正式定时任务之外的第一次实盘扫描，用 X 公开搜索完成，没有发帖。主要窗口为 2026-11-20 17:00 至 2026-11-22 17:20（Asia/Shanghai）。</td></tr>
+      </table>
+    </section>
+
+    <div class="toolbar" role="tablist" aria-label="按建议筛选">
+      <button type="button" data-filter="all" aria-pressed="true">全部 19</button>
+      <button type="button" data-filter="go" aria-pressed="false">可参与 0</button>
+      <button type="button" data-filter="watch" aria-pressed="false">观望 4</button>
+      <button type="button" data-filter="no" aria-pressed="false">排除 15</button>
+    </div>
+
+    <div id="empty-go" class="panel empty">本次没有项目达到可参与标准。</div>
+
+    <article class="card watch" data-name="Thinkers / NFTX">
+      <div class="card-top">
+        <div>
+          <h3>Thinkers / NFTX</h3>
+          <p class="meta-line">Ink · 登记免费，铸造价未公布 · 白名单进行中；官方称股票挂钩 11月24日启动</p>
+        </div>
+        <span class="badge watch">观望</span>
+      </div>
+      <p class="reason">官推已确认白名单，但铸造条件与授权风险尚未核清。</p>
+      <details open>
+        <summary>详情</summary>
+        <ul class="facts">
+          <li><b>免费或收费</b>白名单登记本身免费；铸造价官方尚未说清。</li>
+          <li><b>参与条件</b>NFTX Phase 1 白名单已开放，官方称 100 个名额。@ThinkersClub_ 与 @NFTX_ 转发了 @FlayerLabs 的说明：100 个名额给排名前 100，另 50 个从解锁全部 5 个房间的人中抽取。</li>
+          <li><b>开启时间</b>白名单进行中。@NFTX_ 简介写股票挂钩 11月24日启动。</li>
+          <li><b>官方来源</b><a href="https://nftx.io/thinkers" target="_blank" rel="noopener noreferrer">nftx.io/thinkers</a> · <a href="https://x.com/NFTX_/status/2123872601252470837" target="_blank" rel="noopener noreferrer">NFTX 官帖</a> · <a href="https://x.com/ThinkersClub_/status/2124410069605580918" target="_blank" rel="noopener noreferrer">ThinkersClub 帖</a></li>
+          <li><b>为何观望</b>项目和白名单有官方确认，Ink 也在主盯名单里。但铸造是否收费、是否要额外授权都还没核清。社区有人提醒白名单路径绑了 MoonGate，见 <a href="https://x.com/cute_bunnyies/status/2124416227393306799" target="_blank" rel="noopener noreferrer">这条帖子</a>。这条尚未独立验证，但足以先不去连钱包或授权。</li>
+        </ul>
+      </details>
+    </article>
+
+    <article class="card watch">
+      <div class="card-top">
+        <div>
+          <h3>Oripa Early Bird 徽章</h3>
+          <p class="meta-line">HyperEVM · 徽章只付 gas；后续拆卡需充值 · 官方：11月26日 8 PM 起可拆卡</p>
+        </div>
+        <span class="badge watch">观望</span>
+      </div>
+      <p class="reason">官方已宣布免费徽章，但主体是付费拆卡，且需跨到 HyperEVM。</p>
+      <details open>
+        <summary>详情</summary>
+        <ul class="facts">
+          <li><b>链</b>HyperEVM（Hyperliquid，不在主盯名单，但属 EVM 兼容链）</li>
+          <li><b>免费或收费</b>官方：徽章无铸造价，只付 gas，每钱包 1 个且不可转让。之后拆卡需要充值。</li>
+          <li><b>参与条件</b>在官方站点铸徽章后，可提前参与拆卡；白名单仍按抽签发放。游戏本身是链上拆卡。</li>
+          <li><b>开启时间</b>官方 11月22日帖：11月26日 8 PM 起可拆卡，主帖未写时区。更早官方文章提到 11月25日首次拆卡。社区多按 Asia/Shanghai 20:00 理解。</li>
+          <li><b>官方来源</b><a href="https://x.com/oripaxyz/status/2124378629744554100" target="_blank" rel="noopener noreferrer">Oripa 官帖</a> · <a href="https://oripa.xyz" target="_blank" rel="noopener noreferrer">oripa.xyz</a></li>
+          <li><b>为何观望</b>徽章确实是官方免费加 gas。但它的作用是让钱包去拆卡，社区称 12月2日前每地址充值上限 5,000U。资金计划放在 Base，过到 HyperEVM 还要算跨链和 HYPE gas。官号于 2026年10月21日注册，社区有研究贴提到团队匿名、审计未出。不会为了一枚徽章去先充值拆卡。</li>
+        </ul>
+      </details>
+    </article>
+
+    <article class="card watch">
+      <div class="card-top">
+        <div>
+          <h3>Pixelora Land</h3>
+          <p class="meta-line">Robinhood Chain · 官方称 2,222 块免费土地 · 官方：11月23日在 OpenSea 铸造</p>
+        </div>
+        <span class="badge watch">观望</span>
+      </div>
+      <p class="reason">白名单已闭且铸造在主观望链之外，资金也未到账。</p>
+      <details>
+        <summary>详情</summary>
+        <ul class="facts">
+          <li><b>链</b>Robinhood Chain（不在主盯名单）</li>
+          <li><b>免费或收费</b>官方曾称 2,222 块免费土地，从申请人中抽取。</li>
+          <li><b>参与条件</b>先要已在白名单里。官方核验页：<a href="https://pixelora.fun/checker" target="_blank" rel="noopener noreferrer">pixelora.fun/checker</a>。白名单曾宣布于 11月18日 18:00 UTC 关闭，11月19日官方称已收到 8,650+ 个钱包。</li>
+          <li><b>开启时间</b>官方 11月21日帖：11月23日在 OpenSea 铸造，未写具体时点和时区。</li>
+          <li><b>官方来源</b><a href="https://x.com/PlayPixelora/status/2124184694917140530" target="_blank" rel="noopener noreferrer">Pixelora 官帖</a></li>
+          <li><b>为何观望</b>这是官方活动，但白名单很可能已关闭，本钱包也没提前登记。链不在主盯名单，资金若留在 Base，还要先算跨链和 gas。资金未到账，明天也不会去铸。</li>
+        </ul>
+      </details>
+    </article>
+
+    <article class="card watch">
+      <div class="card-top">
+        <div>
+          <h3>Niblekins</h3>
+          <p class="meta-line">Robinhood Chain · 官方称免费 mint · 尚未公布开启时间</p>
+        </div>
+        <span class="badge watch">观望</span>
+      </div>
+      <p class="reason">官号存在，但 mint 还未开放。</p>
+      <details>
+        <summary>详情</summary>
+        <ul class="facts">
+          <li><b>免费或收费</b>官方简介写 Free Mint，2,969 个。</li>
+          <li><b>参与条件</b>官方仍写即将到来，本次未看到已开放铸造的官帖。</li>
+          <li><b>开启时间</b>未公布。</li>
+          <li><b>官方来源</b><a href="https://x.com/Niblekins" target="_blank" rel="noopener noreferrer">@Niblekins</a> · <a href="http://Niblekins.xyz" target="_blank" rel="noopener noreferrer">Niblekins.xyz</a></li>
+          <li><b>为何观望</b>官号可核验，但 mint 还没开。链不在主盯名单，等官方公布时间和合约后再评。</li>
+        </ul>
+      </details>
+    </article>
+
+    <article class="card no">
+      <div class="card-top">
+        <div>
+          <h3>Zero Guys</h3>
+          <p class="meta-line">Ethereum · 右边称先免费后涨价；需 $ZRO · 核验器已上线；官方称尚未开铸</p>
+        </div>
+        <span class="badge no">排除</span>
+      </div>
+      <p class="reason">免费变相收费，且在以太坊主网用 $ZRO 铸造。</p>
+      <details>
+        <summary>详情</summary>
+        <ul class="facts">
+          <li><b>链</b>Ethereum（官方称收藏在 ETH，之后再空投到主网）</li>
+          <li><b>免费或收费</b>官方：mint 先免费，每个阶段涨 25 美分；另说开口价免费加 10 美分 gas。官方同时引导在 ETH 上兑换 $ZRO 再铸。</li>
+          <li><b>参与条件</b>白名单 2,667，公开 777。核验器已上线，官方称最终核验器 11:30 AM UTC，即 19:30（Asia/Shanghai）。官方回复称 mint 尚未开放。</li>
+          <li><b>官方来源</b><a href="https://x.com/ZeroGuysNFT/status/2124413682977587311" target="_blank" rel="noopener noreferrer">Zero Guys 官帖</a> · <a href="https://zeroguys.fun/mint" target="_blank" rel="noopener noreferrer">zeroguys.fun/mint</a></li>
+          <li><b>为何排除</b>社区有警告称该项目先承诺免费，后改为收 2 $ZRO（约 3 美元），并有点赞转发刷白名单痕迹，见 <a href="https://x.com/krishna__web3/status/2124430456229872069" target="_blank" rel="noopener noreferrer">这条帖子</a>。官方帖也证实要用 $ZRO、在以太坊主网铸造。官号 2026年11月10日才注册。主网 gas 加代币费用，对约 30U 资金不划算。</li>
+        </ul>
+      </details>
+    </article>
+
+    <article class="card no">
+      <div class="card-top">
+        <div>
+          <h3>Jesse + Tornado 生日礼包</h3>
+          <p class="meta-line">Base · 宣称免费 mint · 传单称还有约 15 小时</p>
+        </div>
+        <span class="badge no">排除</span>
+      </div>
+      <p class="reason">非 @base / @jessepollak 官宣，存在冒充风险。</p>
+      <details>
+        <summary>详情</summary>
+        <ul class="facts">
+          <li><b>说明</b>@altagers 等人让去点 @celebrationhb 领 Base 免费 mint。@celebrationhb 粉丝约 348，未认证，站点为 celebration-hub.xyz。本次检索 @base 与 @jessepollak 近期帖，没有对应官宣。来源：<a href="https://x.com/altagers/status/2124429205505225011" target="_blank" rel="noopener noreferrer">相关帖子</a>。</li>
+        </ul>
+      </details>
+    </article>
+
+    <article class="card no">
+      <div class="card-top">
+        <div>
+          <h3>非官方 BASE 空投查询</h3>
+          <p class="meta-line">Base · 查询本身声称免费 · 无官方空投开放时间</p>
+        </div>
+        <span class="badge no">排除</span>
+      </div>
+      <p class="reason">本次未检到 Base 官方空投配额工具，误连钱包风险高。</p>
+      <details>
+        <summary>详情</summary>
+        <ul class="facts">
+          <li><b>说明</b>多个账号让用钱包地址去查预估 $BASE 分配。@base 简介确实写了正在探索网络代币，但本次未找到官方空投配额查询。这类页面常用来诱导连钱包。例如 <a href="https://x.com/CryptoLakhan/status/2124416342313041947" target="_blank" rel="noopener noreferrer">这类帖子</a>。</li>
+        </ul>
+      </details>
+    </article>
+
+    <article class="card no">
+      <div class="card-top">
+        <div>
+          <h3>GIDO</h3>
+          <p class="meta-line">Base · 宣称空投 · 时间不明</p>
+        </div>
+        <span class="badge no">排除</span>
+      </div>
+      <p class="reason">官号 0 条帖，且大量新号复制同一段宣传。</p>
+      <details>
+        <summary>详情</summary>
+        <ul class="facts">
+          <li><b>说明</b>@gidoverse 官号 0 条帖、约 3,396 粉丝。首轮搜索里多个新号、低粉账号复制同一段空投宣传。不符合可核验官方标准。</li>
+        </ul>
+      </details>
+    </article>
+
+    <article class="card no">
+      <div class="card-top">
+        <div>
+          <h3>VAPI Network</h3>
+          <p class="meta-line">Base · 托管加乘，非纯免费 · 积分任务进行中</p>
+        </div>
+        <span class="badge no">排除</span>
+      </div>
+      <p class="reason">典型托管刷积分，缺少可核验的官方价值说明。</p>
+    </article>
+
+    <article class="card no">
+      <div class="card-top">
+        <div>
+          <h3>Bullshot</h3>
+          <p class="meta-line">Base · 挂机挖矿推荐 · 声称空投即将到来</p>
+        </div>
+        <span class="badge no">排除</span>
+      </div>
+      <p class="reason">推荐链接加挂机挖矿模式，不符合筛选标准。</p>
+    </article>
+
+    <article class="card no">
+      <div class="card-top">
+        <div>
+          <h3>BLKH</h3>
+          <p class="meta-line">BSC · 社区称前 3,000 个免费 · 社区称 19:00（MYT / 上海时间）</p>
+        </div>
+        <span class="badge no">排除</span>
+      </div>
+      <p class="reason">本次未找到官宣，社区查 Sourcify 仍无验证记录。</p>
+      <details>
+        <summary>详情</summary>
+        <ul class="facts">
+          <li><b>说明</b>@SengdoTech 称 19:00（MYT，与 Asia/Shanghai 相同）开放，前 3,000 个免费，每个 Agent ID 最多 2 个，之后 0.005 BNB。贴出代币合约 <code>0xB43f944A16991011E1AA0AECF70B501D68E9e74C</code>、销售合约 <code>0x8456F222bceD9EE7A7B6dfb08913B3400d19b869</code>，并称 13:50 MYT 在 Sourcify 仍查不到验证。来源：<a href="https://x.com/SengdoTech/status/2124380436596211783" target="_blank" rel="noopener noreferrer">相关帖子</a>。今晚社区提到的 BSC Agent ID 窗口在有可核验官宣并完成合约验证前不会去点。</li>
+        </ul>
+      </details>
+    </article>
+
+    <article class="card no">
+      <div class="card-top">
+        <div>
+          <h3>YNT</h3>
+          <p class="meta-line">BSC · 社区称免费只付 gas · 社区称 20:00</p>
+        </div>
+        <span class="badge no">排除</span>
+      </div>
+      <p class="reason">合约尚未公布，也未找到可核验官宣。</p>
+      <details>
+        <summary>详情</summary>
+        <ul class="facts">
+          <li><b>说明</b>同一来源称 20:00 开放、500 个免费、每 Agent ID 1 个，但合约还没公布。来源：<a href="https://x.com/SengdoTech/status/2124373711751098695" target="_blank" rel="noopener noreferrer">相关帖子</a>。</li>
+        </ul>
+      </details>
+    </article>
+
+    <article class="card no">
+      <div class="card-top">
+        <div>
+          <h3>DOTFIELD</h3>
+          <p class="meta-line">BSC · 社区称只付 gas · 社区称 20:00，每日 150 个</p>
+        </div>
+        <span class="badge no">排除</span>
+      </div>
+      <p class="reason">仅见个人贴声称合约已验证，本次未核到官方账号。</p>
+    </article>
+
+    <article class="card no">
+      <div class="card-top">
+        <div>
+          <h3>ShardBlade</h3>
+          <p class="meta-line">BSC · 宣称首张免费，后可质押 · 传单称已开放</p>
+        </div>
+        <span class="badge no">排除</span>
+      </div>
+      <p class="reason">未找到可信官号，质押分成 BNB 池存在疑点。</p>
+      <details>
+        <summary>详情</summary>
+        <ul class="facts">
+          <li><b>说明</b>被说成币安 Agent ID 生态的免费或首次免费 mint。站点 shardblade.online，本次查到的 @ShardBlade 并非项目官号，且宣传可质押分成 BNB。缺少本次核实的官方账号。</li>
+        </ul>
+      </details>
+    </article>
+
+    <article class="card no">
+      <div class="card-top">
+        <div>
+          <h3>MMIX Districts</h3>
+          <p class="meta-line">Ethereum · 传单称免费 mint · 等待名单，尚未确认已开铸</p>
+        </div>
+        <span class="badge no">排除</span>
+      </div>
+      <p class="reason">以太坊主网 gas 对约 30U 资金不划算。</p>
+      <details>
+        <summary>详情</summary>
+        <ul class="facts">
+          <li><b>说明</b>传单称在以太坊主网免费铸 3,000 块地块。官号 @MMIX_io 存在，但主网 gas 对约 30U 资金不划算，且尚未确认已开铸。</li>
+        </ul>
+      </details>
+    </article>
+
+    <article class="card no">
+      <div class="card-top">
+        <div>
+          <h3>beepz 免费 NFT</h3>
+          <p class="meta-line">Robinhood Chain · 需销毁铭文或持币才能资格 · 尚未开放</p>
+        </div>
+        <span class="badge no">排除</span>
+      </div>
+      <p class="reason">资格条件等于付费，不是免费项目。</p>
+      <details>
+        <summary>详情</summary>
+        <ul class="facts">
+          <li><b>说明</b>@beepzfun 在 Robinhood Chain。社区称免费 NFT 需销毁 5,000 条铭文或持有 500,000 $beepz，属于付费资格。</li>
+        </ul>
+      </details>
+    </article>
+
+    <article class="card no">
+      <div class="card-top">
+        <div>
+          <h3>aPONKE</h3>
+          <p class="meta-line">BSC · 传单称首批免费，之后 0.003 BNB · 传单称窗口至 11月29日</p>
+        </div>
+        <span class="badge no">排除</span>
+      </div>
+      <p class="reason">本次未核到官号，且免费名额可能已快领完。</p>
+      <details>
+        <summary>详情</summary>
+        <ul class="facts">
+          <li><b>说明</b>合约被贴为 <code>0x0b4281dce6d1b840b3788caa63bf65de099696ea</code>，免费名额到下午已被说领了大半。缺少本次核实的官方账号。</li>
+        </ul>
+      </details>
+    </article>
+
+    <article class="card no">
+      <div class="card-top">
+        <div>
+          <h3>Woodlandz</h3>
+          <p class="meta-line">BSC · 传单称每钱包首张免费 · 传单称进行中</p>
+        </div>
+        <span class="badge no">排除</span>
+      </div>
+      <p class="reason">仅见 KOL 贴出合约，本次未核到官方账号。</p>
+      <details>
+        <summary>详情</summary>
+        <ul class="facts">
+          <li><b>说明</b>合约被贴为 <code>0x4FC2245eb165F7E41749f2f8cb50379dc5f01526</code>。缺少本次核实的官方账号。</li>
+        </ul>
+      </details>
+    </article>
+
+    <article class="card no">
+      <div class="card-top">
+        <div>
+          <h3>PLUMBERS</h3>
+          <p class="meta-line">Ethereum · 申请免费，铸造价未公布 · 日期未公布</p>
+        </div>
+        <span class="badge no">排除</span>
+      </div>
+      <p class="reason">主网费用不明，且不符合主网审慎原则。</p>
+    </article>
+
+
+    <section class="block" id="ops">
+      <h2>操作记录</h2>
+      <p>这里会写下每次实际参与或交易：时间、链、做了什么、手续费、结果，以及心得（为什么赚或亏、有没有漏看的地方、是靠判断还是运气）。目前还没有实际操作，因此没有记录，也不会编造数字。</p>
+    </section>
+
+    <section class="block">
+      <h2>扫描方法</h2>
+      <p>用已连接的 X 公开读接口完成，没有发帖。主要窗口为 2026-11-20 17:00 至 2026-11-22 17:20（Asia/Shanghai），对应查询起始时间 2026-11-20T09:00:00Z。为核对官方活动，官号检索延伸到 11月18日。</p>
+      <ul>
+        <li>英文：free mint + 主流 EVM 链名，排除转发</li>
+        <li>英文：free mint live、mint is live、allowlist / whitelist open、gasless mint</li>
+        <li>英文：airdrop / free claim + 链名，排除转发和回复</li>
+        <li>中文：免费 mint、白名单、空投任务</li>
+        <li>官号查询与近期帖：ZeroGuysNFT、ThinkersClub_、NFTX_、oripaxyz、deca_labs、termix_ai、MMIX_io、Niblekins、PlayPixelora、beepzfun 等</li>
+        <li>核对 @base、@jessepollak 是否有生日礼包或空投官宣</li>
+        <li>追查 ShardBlade、BLKH、aPONKE、Woodlandz、DOTFIELD、YNT</li>
+      </ul>
+      <p>首轮四组关键词搜索去重后 96 条帖；随后又做了官号和专项追查。没有出现接口限流中断。蓝标认证不等于官方，回复和引用帖不当官宣使用。</p>
+    </section>
+
+    <section class="block">
+      <h2>筛选规则</h2>
+      <p>资金可跨链，优先留在 Base。其他链只有在跨链加 gas 仍划算时才考虑。以太坊主网只有费用明显划算才看。约 30U 允许亏完，但手续费可能高过收益的单不做。</p>
+      <ul>
+        <li>排除：假官推、貔貅或卖不出、危险授权（包括 setApprovalForAll、无限授权、来路不明的签名）</li>
+        <li>排除：付费活动伪装成免费、合约可被开发者随意铸或抽干</li>
+        <li>排除：gas、跨链或提现费用可能高过潜在收益</li>
+        <li>保留：有可核验的官推、官网或合约，参与成本低，开启时间明确，风险说得清</li>
+      </ul>
+      <p>资金到账前，这里只更新监控结果。没有已参与项目，也还没有虚拟币买卖，因此不单独列收益表。</p>
+    </section>
+
+    <section class="block">
+      <h2>主要官方链接</h2>
+      <div class="links">
+        <a href="https://nftx.io/thinkers" target="_blank" rel="noopener noreferrer">NFTX Thinkers 白名单<small>nftx.io</small></a>
+        <a href="https://x.com/NFTX_/status/2123872601252470837" target="_blank" rel="noopener noreferrer">NFTX Phase 1 白名单官帖<small>x.com · 2026-11-20</small></a>
+        <a href="https://x.com/oripaxyz/status/2124378629744554100" target="_blank" rel="noopener noreferrer">Oripa Early Bird 官帖<small>x.com · 2026-11-22</small></a>
+        <a href="https://pixelora.fun/checker" target="_blank" rel="noopener noreferrer">Pixelora 白名单核验<small>pixelora.fun</small></a>
+        <a href="https://x.com/ZeroGuysNFT/status/2124413682977587311" target="_blank" rel="noopener noreferrer">Zero Guys 核验器（已排除）<small>x.com · 2026-11-22</small></a>
+      </div>
+    </section>
+
+    <footer>本页每次扫描或操作后都会更新，浏览器大约每 60 秒自动刷新。页面只放监控结论、操作记录和公开地址，不会写入私钥或助记词。</footer>
+  </div>
+  <script>
+    const buttons = document.querySelectorAll(".toolbar button");
+    buttons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const filter = btn.getAttribute("data-filter");
+        document.body.classList.remove("filter-go", "filter-watch", "filter-no");
+        if (filter !== "all") document.body.classList.add("filter-" + filter);
+        buttons.forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
+      });
+    });
+    document.querySelectorAll(".copy").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const text = btn.getAttribute("data-copy") || "";
+        try {
+          await navigator.clipboard.writeText(text);
+          btn.textContent = "已复制";
+          setTimeout(() => { btn.textContent = "复制"; }, 1500);
+        } catch (e) {
+          btn.textContent = "复制失败";
+        }
+      });
+    });
+  </script>
+</body>
+</html>
