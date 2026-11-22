@@ -4,7 +4,6 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="refresh" content="60">
   <title>推特免费项目监控看板</title>
   <style>
     :root {
@@ -26,6 +25,7 @@
       --info-bg: #eff6ff;
       --shadow: 0 1px 2px rgba(15, 23, 42, .06), 0 8px 24px rgba(15, 23, 42, .04);
       --radius: 16px;
+      --chrome: 0;
     }
     * { box-sizing: border-box; }
     html { color-scheme: light; }
@@ -44,30 +44,86 @@
       font-size: .9em;
       word-break: break-all;
     }
-    .wrap { max-width: 980px; margin: 0 auto; padding: 28px 20px 72px; }
-    header.top {
+    .wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+    .chrome {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: color-mix(in srgb, var(--bg) 92%, transparent);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--line);
+    }
+    .top {
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
-      gap: 12px 24px;
-      margin-bottom: 22px;
+      gap: 8px 24px;
+      padding-top: 16px;
+      padding-bottom: 8px;
     }
-    .kicker { margin: 0 0 4px; color: var(--faint); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; }
-    h1 { margin: 0; font-size: 28px; line-height: 1.25; letter-spacing: -.02em; }
-    .updated { color: var(--muted); font-size: 14px; text-align: right; }
+    .kicker { margin: 0 0 2px; color: var(--faint); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: 24px; line-height: 1.25; letter-spacing: -.02em; }
+    .updated { color: var(--muted); font-size: 13px; text-align: right; }
+    nav.tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 8px 0 12px;
+    }
+    nav.tabs a {
+      appearance: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--line-strong);
+      background: #fff;
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 7px 13px;
+      font: inherit;
+      font-size: 14px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    nav.tabs a:hover { border-color: #93c5fd; background: #eff6ff; }
+    nav.tabs a[aria-current="page"] {
+      background: #111827;
+      border-color: #111827;
+      color: #fff;
+    }
+    nav.tabs a .count {
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+    }
+    .strip {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 6px 14px;
+      padding: 8px 0 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .strip strong { color: var(--ink); font-weight: 700; }
+    .strip a { color: inherit; }
+    main { padding: 20px 0 72px; }
+    .view { display: none; }
+    .view.is-active { display: block; }
+    .view h2 { margin: 0 0 12px; font-size: 20px; }
+    .lede { margin: 0 0 16px; color: var(--muted); }
     .banner {
       background: var(--info-bg);
       border: 1px solid #dbeafe;
       color: #1e3a8a;
       border-radius: var(--radius);
       padding: 14px 16px;
-      margin: 0 0 20px;
+      margin: 0 0 18px;
     }
     .metrics {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 12px;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
     }
     .metric {
       background: var(--card);
@@ -75,55 +131,45 @@
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       padding: 16px 16px 14px;
+      color: inherit;
+      text-decoration: none;
+      display: block;
     }
+    .metric:hover { border-color: #93c5fd; }
     .metric b { display: block; font-size: 34px; line-height: 1; letter-spacing: -.03em; }
     .metric span { display: block; margin-top: 8px; color: var(--muted); font-size: 13px; }
     .metric.go b { color: var(--go); }
     .metric.watch b { color: var(--watch); }
     .metric.no b { color: var(--no); }
-    .panel, .card, .block {
+    .panel, .card, .block, .hold {
       background: var(--card);
       border: 1px solid var(--line);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
     }
-    .panel { padding: 18px 18px 8px; margin-bottom: 20px; }
-    .panel h2, .block h2, .section-head h2 {
-      margin: 0 0 12px;
-      font-size: 18px;
-    }
+    .panel, .block { padding: 18px; margin-bottom: 16px; }
+    .panel h2, .block h2, .hold h2 { margin: 0 0 10px; font-size: 18px; }
     .props { width: 100%; border-collapse: collapse; }
     .props th, .props td { padding: 10px 0; border-top: 1px solid var(--line); vertical-align: top; text-align: left; }
     .props tr:first-child th, .props tr:first-child td { border-top: 0; }
     .props th { width: 7.5em; color: var(--muted); font-weight: 600; padding-right: 16px; }
-    .toolbar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin: 0 0 14px;
-      position: sticky;
-      top: 0;
-      z-index: 5;
-      padding: 10px 0;
-      background: color-mix(in srgb, var(--bg) 92%, transparent);
-      backdrop-filter: blur(8px);
+    .data { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .data th, .data td { padding: 10px 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    .data th { color: var(--muted); font-weight: 600; font-size: 12px; }
+    .data tr:last-child td { border-bottom: 0; }
+    .scroll { overflow-x: auto; }
+    .hold {
+      padding: 22px 20px 18px;
+      margin-bottom: 16px;
+      border-left: 4px solid #059669;
     }
-    .toolbar button {
-      appearance: none;
-      border: 1px solid var(--line-strong);
-      background: #fff;
-      color: var(--ink);
-      border-radius: 999px;
-      padding: 7px 14px;
-      font: inherit;
-      font-size: 14px;
-      cursor: pointer;
-    }
-    .toolbar button[aria-pressed="true"] {
-      background: #111827;
-      border-color: #111827;
-      color: #fff;
-    }
+    .hold .label { margin: 0; color: var(--faint); font-size: 12px; font-weight: 600; letter-spacing: .04em; }
+    .hold .chain { margin: 4px 0 0; font-size: 22px; }
+    .hold .chain-meta { margin: 2px 0 12px; color: var(--muted); font-size: 14px; }
+    .hold .amt { margin: 0; font-size: 30px; line-height: 1.2; letter-spacing: -.03em; font-weight: 700; word-break: break-all; }
+    .hold .amt small { font-size: 16px; font-weight: 600; color: var(--muted); }
+    .hold .usd { margin: 6px 0 0; font-size: 18px; color: var(--go); font-weight: 700; }
+    .hold .note { margin: 10px 0 0; color: var(--muted); font-size: 14px; }
     .card {
       padding: 16px 16px 14px;
       margin-bottom: 12px;
@@ -169,8 +215,6 @@
       font-size: 12px;
       cursor: pointer;
     }
-    .block { padding: 18px; margin: 20px 0 0; }
-    .block h2 { margin-bottom: 8px; }
     .block ul { margin: 8px 0 0; padding-left: 1.2em; }
     .block li { margin: 4px 0; }
     .links { display: grid; gap: 8px; margin-top: 10px; }
@@ -185,64 +229,177 @@
     }
     .links a:hover { border-color: #93c5fd; background: #eff6ff; }
     .links small { display: block; color: var(--faint); margin-top: 2px; }
-    footer { margin-top: 28px; color: var(--faint); font-size: 13px; }
-    .empty { display: none; padding: 28px; text-align: center; color: var(--muted); }
-    body.filter-go .card:not(.go),
-    body.filter-watch .card:not(.watch),
-    body.filter-no .card:not(.no) { display: none; }
-    body.filter-go #empty-go { display: block; }
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 36px 18px;
+    }
+    .empty strong { display: block; color: var(--ink); font-size: 18px; margin-bottom: 8px; }
+    footer { margin-top: 20px; color: var(--faint); font-size: 13px; }
     @media (max-width: 800px) {
       .metrics { grid-template-columns: 1fr 1fr; }
-      h1 { font-size: 24px; }
+      h1 { font-size: 22px; }
       .updated { text-align: left; }
       .props, .props tbody, .props tr, .props th, .props td { display: block; width: auto; }
       .props th { padding: 10px 0 0; border-top: 0; }
       .props td { padding: 2px 0 10px; border-top: 0; }
       .props tr { border-top: 1px solid var(--line); padding-top: 4px; }
+      .hold .amt { font-size: 22px; }
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header class="top">
-      <div>
-        <p class="kicker">监控看板</p>
-        <h1>推特免费项目监控</h1>
-      </div>
-      <p class="updated">数据截止 2026年11月22日 19:06<br>时区 Asia/Shanghai<br>下一次定时扫描：今晚 21:00<br>本页每 60 秒自动刷新</p>
-    </header>
-
-    <div class="banner">资金已到账。本次扫描仍没有项目达到可参与标准；通过筛选的项目不是铸造价未明、就是需要跨链，或官宣还不够。没有你的明确同意，不会签名或花费。本页不会编造收益数字。</div>
-
-    <section class="metrics" aria-label="本次扫描结论">
-      <div class="metric go"><b>0</b><span>可参与</span></div>
-      <div class="metric watch"><b>4</b><span>观望</span></div>
-      <div class="metric no"><b>15</b><span>排除（详表）</span></div>
-      <div class="metric"><b>96</b><span>首轮去重帖子</span></div>
-    </section>
-
-    <section class="panel">
-      <h2>当前状态</h2>
-      <table class="props">
-        <tr><th>专用钱包</th><td><code id="wallet">0x55ffec51ee4583c4658dbd7675b4f16377D1e8f6</code> <button class="copy" type="button" data-copy="0x55ffec51ee4583c4658dbd7675b4f16377D1e8f6">复制</button></td></tr>
-        <tr><th>资金</th><td>已到账：Robinhood Chain 原生 ETH 0.016334052696760852。2026年11月22日 19:06（Asia/Shanghai）按 CoinGecko ETH 约 1709.64 美元计，大约 27.93 美元。WETH、USDG、USDC、USDT 等常见代币余额为 0。尚未向外花费。没有明确同意不会签名或交易。</td></tr>
-        <tr><th>建议提币网络</th><td>Base；同一地址在多条 EVM 链可用。</td></tr>
-        <tr><th>主盯链</th><td>Ethereum、Base、BSC、Arbitrum、Optimism、Polygon、Avalanche、Monad、Ink、Unichain</td></tr>
-        <tr><th>兼顾链</th><td>Linea、World Chain、Mantle、X Layer、Berachain、MegaETH、Scroll、zkSync Era、Soneium、Sonic；其他 EVM 链若出现热门免费项目也纳入。</td></tr>
-        <tr><th>扫描说明</th><td>这是正式定时任务之外的第一次实盘扫描，用 X 公开搜索完成，没有发帖。主要窗口为 2026-11-20 17:00 至 2026-11-22 17:20（Asia/Shanghai）。</td></tr>
-      </table>
-    </section>
-
-    <div class="toolbar" role="tablist" aria-label="按建议筛选">
-      <button type="button" data-filter="all" aria-pressed="true">全部 19</button>
-      <button type="button" data-filter="go" aria-pressed="false">可参与 0</button>
-      <button type="button" data-filter="watch" aria-pressed="false">观望 4</button>
-      <button type="button" data-filter="no" aria-pressed="false">排除 15</button>
+  <div class="chrome">
+    <div class="wrap">
+      <header class="top">
+        <div>
+          <p class="kicker">监控看板</p>
+          <h1>推特免费项目监控</h1>
+        </div>
+        <p class="updated">页面更新 2026年11月22日 19:30<br>时区 Asia/Shanghai<br>项目扫描：2026年11月22日 17:20<br>余额查询：2026年11月22日 19:29<br>下一次定时扫描：今晚 21:00<br>本页每 60 秒自动刷新</p>
+      </header>
+      <nav class="tabs" aria-label="分类导航">
+        <a href="#overview" data-view="overview">总览</a>
+        <a href="#wallet" data-view="wallet">钱包余额</a>
+        <a href="#go" data-view="go">可参与 <span class="count">0</span></a>
+        <a href="#watch" data-view="watch">观望 <span class="count">4</span></a>
+        <a href="#reject" data-view="reject">排除 <span class="count">15</span></a>
+        <a href="#joined" data-view="joined">已参与 <span class="count">0</span></a>
+        <a href="#trades" data-view="trades">代币交易 <span class="count">0</span></a>
+        <a href="#lessons" data-view="lessons">操作心得</a>
+      </nav>
+      <p class="strip">当前余额：<strong>Robinhood Chain</strong> 原生 ETH <strong class="mono">0.016334052696760852</strong>，约 <strong>27.91 美元</strong> · 已查的其他链余额为 0 · 尚未花费 · <a href="#wallet">查看明细</a></p>
     </div>
+  </div>
 
-    <div id="empty-go" class="panel empty">本次没有项目达到可参与标准。</div>
+  <main class="wrap">
+    <section id="view-overview" class="view" data-view="overview">
+      <div class="banner">资金已到账，目前只在 Robinhood Chain 上有余额。本次扫描仍没有项目达到可参与标准；通过筛选的项目不是铸造价未明、就是需要跨链，或官宣还不够。没有你的明确同意，不会签名或花费。本页不会编造收益数字。</div>
+      <div class="metrics" aria-label="本次扫描结论">
+        <a class="metric go" href="#go"><b>0</b><span>可参与</span></a>
+        <a class="metric watch" href="#watch"><b>4</b><span>观望</span></a>
+        <a class="metric no" href="#reject"><b>15</b><span>排除（详表）</span></a>
+        <div class="metric"><b>96</b><span>首轮去重帖子</span></div>
+      </div>
+      <section class="panel">
+        <h2>钱包速览</h2>
+        <table class="props">
+          <tr><th>专用钱包</th><td><code id="wallet-addr">0x55ffec51ee4583c4658dbd7675b4f16377D1e8f6</code> <button class="copy" type="button" data-copy="0x55ffec51ee4583c4658dbd7675b4f16377D1e8f6">复制</button></td></tr>
+          <tr><th>有余额的链</th><td>仅 Robinhood Chain 主网（Chain ID 4663）。原生 ETH 0.016334052696760852，按 2026年11月22日 19:29（Asia/Shanghai）CoinGecko ETH 约 1708.62 美元计，大约 27.91 美元。</td></tr>
+          <tr><th>其他已查链</th><td>Ethereum、Base、BSC、Arbitrum、Optimism、Polygon、Avalanche、Ink、Unichain、Linea、Scroll、zkSync Era、Mantle、World Chain 的原生余额均为 0，发出交易数均为 0。</td></tr>
+          <tr><th>代币</th><td>Robinhood Chain 上已核的 WETH、USDG、USDC、USDT 余额均为 0。尚未参与任何项目，也没有代币买卖。</td></tr>
+        </table>
+        <p style="margin:12px 0 0"><a href="#wallet">打开钱包余额页，查看分链明细</a></p>
+      </section>
+      <section class="block">
+        <h2>筛选规则</h2>
+        <p>优先参与手续费便宜的网络。高 gas 网络（例如以太坊主网）必须有十足把握能赚钱才考虑。不可梭哈，必须留后路和 gas。约 30U 允许亏完，但手续费可能高过收益的单不做。</p>
+        <ul>
+          <li>排除：假官推、貔貅或卖不出、危险授权（包括 setApprovalForAll、无限授权、来路不明的签名）</li>
+          <li>排除：付费活动伪装成免费、合约可被开发者随意铸或抽干</li>
+          <li>排除：gas、跨链或提现费用可能高过潜在收益</li>
+          <li>保留：有可核验的官推、官网或合约，参与成本低，开启时间明确，风险说得清</li>
+        </ul>
+      </section>
+      <section class="block">
+        <h2>扫描方法</h2>
+        <p>用已连接的 X 公开读接口完成，没有发帖。主要窗口为 2026-11-20 17:00 至 2026-11-22 17:20（Asia/Shanghai）。为核对官方活动，官号检索延伸到 11月18日。</p>
+        <ul>
+          <li>英文：free mint + 主流 EVM 链名，排除转发</li>
+          <li>英文：free mint live、mint is live、allowlist / whitelist open、gasless mint</li>
+          <li>英文：airdrop / free claim + 链名，排除转发和回复</li>
+          <li>中文：免费 mint、白名单、空投任务</li>
+          <li>官号查询与近期帖：ZeroGuysNFT、ThinkersClub_、NFTX_、oripaxyz、deca_labs、termix_ai、MMIX_io、Niblekins、PlayPixelora、beepzfun 等</li>
+          <li>核对 @base、@jessepollak 是否有生日礼包或空投官宣</li>
+          <li>追查 ShardBlade、BLKH、aPONKE、Woodlandz、DOTFIELD、YNT</li>
+        </ul>
+        <p>首轮四组关键词搜索去重后 96 条帖；随后又做了官号和专项追查。没有出现接口限流中断。蓝标认证不等于官方，回复和引用帖不当官宣使用。</p>
+      </section>
+      <section class="block">
+        <h2>主要官方链接</h2>
+        <div class="links">
+          <a href="https://nftx.io/thinkers" target="_blank" rel="noopener noreferrer">NFTX Thinkers 白名单<small>nftx.io</small></a>
+          <a href="https://x.com/NFTX_/status/2123872601252470837" target="_blank" rel="noopener noreferrer">NFTX Phase 1 白名单官帖<small>x.com · 2026-11-20</small></a>
+          <a href="https://x.com/oripaxyz/status/2124378629744554100" target="_blank" rel="noopener noreferrer">Oripa Early Bird 官帖<small>x.com · 2026-11-22</small></a>
+          <a href="https://pixelora.fun/checker" target="_blank" rel="noopener noreferrer">Pixelora 白名单核验<small>pixelora.fun</small></a>
+          <a href="https://x.com/ZeroGuysNFT/status/2124413682977587311" target="_blank" rel="noopener noreferrer">Zero Guys 核验器（已排除）<small>x.com · 2026-11-22</small></a>
+        </div>
+      </section>
+    </section>
 
-    <article class="card watch" data-name="Thinkers / NFTX">
+    <section id="view-wallet" class="view" data-view="wallet">
+      <h2>钱包余额</h2>
+      <p class="lede">同一地址可用于多条 EVM 链。下面只写本次实际查到的数字，没有查过的链不填余额。</p>
+      <section class="panel">
+        <h2>地址</h2>
+        <table class="props">
+          <tr><th>专用钱包</th><td><code>0x55ffec51ee4583c4658dbd7675b4f16377D1e8f6</code> <button class="copy" type="button" data-copy="0x55ffec51ee4583c4658dbd7675b4f16377D1e8f6">复制</button></td></tr>
+          <tr><th>查询时间</th><td>2026年11月22日 19:29（Asia/Shanghai）</td></tr>
+          <tr><th>花费情况</th><td>所有已查链的发出交易数都是 0，还没有签名或转出。没有明确同意不会签名或花费。</td></tr>
+        </table>
+      </section>
+      <div class="hold">
+        <p class="label">当前有余额的链</p>
+        <h2 class="chain">Robinhood Chain</h2>
+        <p class="chain-meta">主网 · Chain ID 4663 · 原生代币 ETH · <a href="https://robinhoodchain.blockscout.com/address/0x55ffec51ee4583c4658dbd7675b4f16377D1e8f6" target="_blank" rel="noopener noreferrer">区块浏览器</a></p>
+        <p class="amt mono">0.016334052696760852 <small>ETH</small></p>
+        <p class="usd">约 27.91 美元</p>
+        <p class="note">按查询当时 CoinGecko ETH 约 1708.62 美元计算。发出交易数（nonce）为 0，尚未向外花费。</p>
+      </div>
+      <section class="panel">
+        <h2>Robinhood Chain 已核代币</h2>
+        <p class="lede">这些是此前已核对过的官方或常见合约，余额在 2026年11月22日 19:29 再次查询，均为 0。</p>
+        <div class="scroll">
+          <table class="data">
+            <thead><tr><th>代币</th><th>合约</th><th>余额</th></tr></thead>
+            <tbody>
+              <tr><td>WETH</td><td class="mono">0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73</td><td>0</td></tr>
+              <tr><td>USDG</td><td class="mono">0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168</td><td>0</td></tr>
+              <tr><td>USDC</td><td class="mono">0x80e0e24718dbFcad49ECAA6F1e6C89A190586cA8</td><td>0</td></tr>
+              <tr><td>USDT</td><td class="mono">0xE246BC49b0598d7Cd9f0eAD48B885034f1254380</td><td>0</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section class="panel">
+        <h2>已查但余额为 0 的链</h2>
+        <p class="lede">以下只查了各链原生代币，没有把每条链上的全部代币扫一遍。</p>
+        <div class="scroll">
+          <table class="data">
+            <thead><tr><th>链</th><th>Chain ID</th><th>原生余额</th><th>约合</th><th>发出交易</th><th>浏览器</th></tr></thead>
+            <tbody>
+          <tr><td>Ethereum</td><td class="mono">1</td><td>0 ETH</td><td>约 0 美元</td><td>0</td><td><a href="https://etherscan.io/address/0x55ffec51ee4583c4658dbd7675b4f16377D1e8f6" target="_blank" rel="noopener noreferrer">浏览器</a></td></tr>
+          <tr><td>Base</td><td class="mono">8453</td><td>0 ETH</td><td>约 0 美元</td><td>0</td><td><a href="https://basescan.org/address/0x55ffec51ee4583c4658dbd7675b4f16377D1e8f6" target="_blank" rel="noopener noreferrer">浏览器</a></td></tr>
+          <tr><td>BSC</td><td class="mono">56</td><td>0 BNB</td><td>约 0 美元</td><td>0</td><td><a href="https://bscscan.com/address/0x55ffec51ee4583c4658dbd7675b4f16377D1e8f6" target="_blank" rel="noopener noreferrer">浏览器</a></td></tr>
+          <tr><td>Arbitrum One</td><td class="mono">42161</td><td>0 ETH</td><td>约 0 美元</td><td>0</td><td><a href="https://arbiscan.io/address/0x55ffec51ee4583c4658dbd7675b4f16377D1e8f6" target="_blank" rel="noopener noreferrer">浏览器</a></td></tr>
+          <tr><td>Optimism</td><td class="mono">10</td><td>0 ETH</td><td>约 0 美元</td><td>0</td><td><a href="https://optimistic.etherscan.io/address/0x55ffec51ee4583c4658dbd7675b4f16377D1e8f6" target="_blank" rel="noopener noreferrer">浏览器</a></td></tr>
+          <tr><td>Polygon</td><td class="mono">137</td><td>0 POL</td><td>约 0 美元</td><td>0</td><td><a href="https://polygonscan.com/address/0x55ffec51ee4583c4658dbd7675b4f16377D1e8f6" target="_blank" rel="noopener noreferrer">浏览器</a></td></tr>
+          <tr><td>Avalanche C-Chain</td><td class="mono">43114</td><td>0 AVAX</td><td>约 0 美元</td><td>0</td><td><a href="https://snowtrace.io/address/0x55ffec51ee4583c4658dbd7675b4f16377D1e8f6" target="_blank" rel="noopener noreferrer">浏览器</a></td></tr>
+          <tr><td>Ink</td><td class="mono">57073</td><td>0 ETH</td><td>约 0 美元</td><td>0</td><td><a href="https://explorer.inkonchain.com/address/0x55ffec51ee4583c4658dbd7675b4f16377D1e8f6" target="_blank" rel="noopener noreferrer">浏览器</a></td></tr>
+          <tr><td>Unichain</td><td class="mono">130</td><td>0 ETH</td><td>约 0 美元</td><td>0</td><td><a href="https://uniscan.xyz/address/0x55ffec51ee4583c4658dbd7675b4f16377D1e8f6" target="_blank" rel="noopener noreferrer">浏览器</a></td></tr>
+          <tr><td>Linea</td><td class="mono">59144</td><td>0 ETH</td><td>约 0 美元</td><td>0</td><td><a href="https://lineascan.build/address/0x55ffec51ee4583c4658dbd7675b4f16377D1e8f6" target="_blank" rel="noopener noreferrer">浏览器</a></td></tr>
+          <tr><td>Scroll</td><td class="mono">534352</td><td>0 ETH</td><td>约 0 美元</td><td>0</td><td><a href="https://scrollscan.com/address/0x55ffec51ee4583c4658dbd7675b4f16377D1e8f6" target="_blank" rel="noopener noreferrer">浏览器</a></td></tr>
+          <tr><td>zkSync Era</td><td class="mono">324</td><td>0 ETH</td><td>约 0 美元</td><td>0</td><td><a href="https://explorer.zksync.io/address/0x55ffec51ee4583c4658dbd7675b4f16377D1e8f6" target="_blank" rel="noopener noreferrer">浏览器</a></td></tr>
+          <tr><td>Mantle</td><td class="mono">5000</td><td>0 MNT</td><td>约 0 美元</td><td>0</td><td><a href="https://mantlescan.xyz/address/0x55ffec51ee4583c4658dbd7675b4f16377D1e8f6" target="_blank" rel="noopener noreferrer">浏览器</a></td></tr>
+          <tr><td>World Chain</td><td class="mono">480</td><td>0 ETH</td><td>约 0 美元</td><td>0</td><td><a href="https://worldscan.org/address/0x55ffec51ee4583c4658dbd7675b4f16377D1e8f6" target="_blank" rel="noopener noreferrer">浏览器</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <section id="view-go" class="view" data-view="go">
+      <h2>可参与</h2>
+      <div class="panel empty">
+        <strong>目前没有达到可参与标准的项目</strong>
+        本次扫描结论仍是 0 个。通过筛选的都还在观望：要么铸造价未明，要么需要跨链，要么官宣还不够。有符合标准的项目时，会写在这一栏，并说明免费还是收费、参与条件、开启时间和原因。
+      </div>
+    </section>
+
+    <section id="view-watch" class="view" data-view="watch">
+      <h2>观望</h2>
+      <p class="lede">有官方线索，但还不能安全参与。共 4 个，来自 2026年11月22日 17:20 的扫描。</p>
+      <article class="card watch" data-name="Thinkers / NFTX">
       <div class="card-top">
         <div>
           <h3>Thinkers / NFTX</h3>
@@ -263,7 +420,8 @@
       </details>
     </article>
 
-    <article class="card watch">
+    
+<article class="card watch">
       <div class="card-top">
         <div>
           <h3>Oripa Early Bird 徽章</h3>
@@ -285,7 +443,8 @@
       </details>
     </article>
 
-    <article class="card watch">
+    
+<article class="card watch">
       <div class="card-top">
         <div>
           <h3>Pixelora Land</h3>
@@ -293,7 +452,7 @@
         </div>
         <span class="badge watch">观望</span>
       </div>
-      <p class="reason">白名单已闭且铸造在主观望链之外，资金也未到账。</p>
+      <p class="reason">白名单很可能已关闭，本钱包也没提前登记；铸造具体时点仍不明确。</p>
       <details>
         <summary>详情</summary>
         <ul class="facts">
@@ -302,12 +461,13 @@
           <li><b>参与条件</b>先要已在白名单里。官方核验页：<a href="https://pixelora.fun/checker" target="_blank" rel="noopener noreferrer">pixelora.fun/checker</a>。白名单曾宣布于 11月18日 18:00 UTC 关闭，11月19日官方称已收到 8,650+ 个钱包。</li>
           <li><b>开启时间</b>官方 11月21日帖：11月23日在 OpenSea 铸造，未写具体时点和时区。</li>
           <li><b>官方来源</b><a href="https://x.com/PlayPixelora/status/2124184694917140530" target="_blank" rel="noopener noreferrer">Pixelora 官帖</a></li>
-          <li><b>为何观望</b>这是官方活动，但白名单很可能已关闭，本钱包也没提前登记。链不在主盯名单，资金若留在 Base，还要先算跨链和 gas。资金未到账，明天也不会去铸。</li>
+          <li><b>为何观望</b>这是官方活动，资金现在也在 Robinhood Chain 上。但白名单很可能已关闭，本钱包没有提前登记。官方只说到 11月23日在 OpenSea 铸造，未写具体时点。没有白名单资格就不会去铸。</li>
         </ul>
       </details>
     </article>
 
-    <article class="card watch">
+    
+<article class="card watch">
       <div class="card-top">
         <div>
           <h3>Niblekins</h3>
@@ -328,7 +488,13 @@
       </details>
     </article>
 
-    <article class="card no">
+    
+    </section>
+
+    <section id="view-reject" class="view" data-view="reject">
+      <h2>排除</h2>
+      <p class="lede">已经判定不参与的项目，共 15 个（详表）。点开详情可看原因和来源。</p>
+      <article class="card no">
       <div class="card-top">
         <div>
           <h3>Zero Guys</h3>
@@ -349,7 +515,8 @@
       </details>
     </article>
 
-    <article class="card no">
+    
+<article class="card no">
       <div class="card-top">
         <div>
           <h3>Jesse + Tornado 生日礼包</h3>
@@ -366,7 +533,8 @@
       </details>
     </article>
 
-    <article class="card no">
+    
+<article class="card no">
       <div class="card-top">
         <div>
           <h3>非官方 BASE 空投查询</h3>
@@ -383,7 +551,8 @@
       </details>
     </article>
 
-    <article class="card no">
+    
+<article class="card no">
       <div class="card-top">
         <div>
           <h3>GIDO</h3>
@@ -400,7 +569,8 @@
       </details>
     </article>
 
-    <article class="card no">
+    
+<article class="card no">
       <div class="card-top">
         <div>
           <h3>VAPI Network</h3>
@@ -411,7 +581,8 @@
       <p class="reason">典型托管刷积分，缺少可核验的官方价值说明。</p>
     </article>
 
-    <article class="card no">
+    
+<article class="card no">
       <div class="card-top">
         <div>
           <h3>Bullshot</h3>
@@ -422,7 +593,8 @@
       <p class="reason">推荐链接加挂机挖矿模式，不符合筛选标准。</p>
     </article>
 
-    <article class="card no">
+    
+<article class="card no">
       <div class="card-top">
         <div>
           <h3>BLKH</h3>
@@ -439,7 +611,8 @@
       </details>
     </article>
 
-    <article class="card no">
+    
+<article class="card no">
       <div class="card-top">
         <div>
           <h3>YNT</h3>
@@ -456,7 +629,8 @@
       </details>
     </article>
 
-    <article class="card no">
+    
+<article class="card no">
       <div class="card-top">
         <div>
           <h3>DOTFIELD</h3>
@@ -467,7 +641,8 @@
       <p class="reason">仅见个人贴声称合约已验证，本次未核到官方账号。</p>
     </article>
 
-    <article class="card no">
+    
+<article class="card no">
       <div class="card-top">
         <div>
           <h3>ShardBlade</h3>
@@ -484,7 +659,8 @@
       </details>
     </article>
 
-    <article class="card no">
+    
+<article class="card no">
       <div class="card-top">
         <div>
           <h3>MMIX Districts</h3>
@@ -501,7 +677,8 @@
       </details>
     </article>
 
-    <article class="card no">
+    
+<article class="card no">
       <div class="card-top">
         <div>
           <h3>beepz 免费 NFT</h3>
@@ -518,7 +695,8 @@
       </details>
     </article>
 
-    <article class="card no">
+    
+<article class="card no">
       <div class="card-top">
         <div>
           <h3>aPONKE</h3>
@@ -535,7 +713,8 @@
       </details>
     </article>
 
-    <article class="card no">
+    
+<article class="card no">
       <div class="card-top">
         <div>
           <h3>Woodlandz</h3>
@@ -552,7 +731,8 @@
       </details>
     </article>
 
-    <article class="card no">
+    
+<article class="card no">
       <div class="card-top">
         <div>
           <h3>PLUMBERS</h3>
@@ -562,63 +742,65 @@
       </div>
       <p class="reason">主网费用不明，且不符合主网审慎原则。</p>
     </article>
-
-
-    <section class="block" id="ops">
-      <h2>操作记录</h2>
-      <p>这里会写下每次实际参与或交易：时间、链、做了什么、手续费、结果，以及心得（为什么赚或亏、有没有漏看的地方、是靠判断还是运气）。目前还没有实际操作，因此没有记录，也不会编造数字。</p>
     </section>
 
-    <section class="block">
-      <h2>扫描方法</h2>
-      <p>用已连接的 X 公开读接口完成，没有发帖。主要窗口为 2026-11-20 17:00 至 2026-11-22 17:20（Asia/Shanghai），对应查询起始时间 2026-11-20T09:00:00Z。为核对官方活动，官号检索延伸到 11月18日。</p>
-      <ul>
-        <li>英文：free mint + 主流 EVM 链名，排除转发</li>
-        <li>英文：free mint live、mint is live、allowlist / whitelist open、gasless mint</li>
-        <li>英文：airdrop / free claim + 链名，排除转发和回复</li>
-        <li>中文：免费 mint、白名单、空投任务</li>
-        <li>官号查询与近期帖：ZeroGuysNFT、ThinkersClub_、NFTX_、oripaxyz、deca_labs、termix_ai、MMIX_io、Niblekins、PlayPixelora、beepzfun 等</li>
-        <li>核对 @base、@jessepollak 是否有生日礼包或空投官宣</li>
-        <li>追查 ShardBlade、BLKH、aPONKE、Woodlandz、DOTFIELD、YNT</li>
-      </ul>
-      <p>首轮四组关键词搜索去重后 96 条帖；随后又做了官号和专项追查。没有出现接口限流中断。蓝标认证不等于官方，回复和引用帖不当官宣使用。</p>
-    </section>
-
-    <section class="block">
-      <h2>筛选规则</h2>
-      <p>资金可跨链，优先留在 Base。其他链只有在跨链加 gas 仍划算时才考虑。以太坊主网只有费用明显划算才看。约 30U 允许亏完，但手续费可能高过收益的单不做。</p>
-      <ul>
-        <li>排除：假官推、貔貅或卖不出、危险授权（包括 setApprovalForAll、无限授权、来路不明的签名）</li>
-        <li>排除：付费活动伪装成免费、合约可被开发者随意铸或抽干</li>
-        <li>排除：gas、跨链或提现费用可能高过潜在收益</li>
-        <li>保留：有可核验的官推、官网或合约，参与成本低，开启时间明确，风险说得清</li>
-      </ul>
-      <p>资金到账前，这里只更新监控结果。没有已参与项目，也还没有虚拟币买卖，因此不单独列收益表。</p>
-    </section>
-
-    <section class="block">
-      <h2>主要官方链接</h2>
-      <div class="links">
-        <a href="https://nftx.io/thinkers" target="_blank" rel="noopener noreferrer">NFTX Thinkers 白名单<small>nftx.io</small></a>
-        <a href="https://x.com/NFTX_/status/2123872601252470837" target="_blank" rel="noopener noreferrer">NFTX Phase 1 白名单官帖<small>x.com · 2026-11-20</small></a>
-        <a href="https://x.com/oripaxyz/status/2124378629744554100" target="_blank" rel="noopener noreferrer">Oripa Early Bird 官帖<small>x.com · 2026-11-22</small></a>
-        <a href="https://pixelora.fun/checker" target="_blank" rel="noopener noreferrer">Pixelora 白名单核验<small>pixelora.fun</small></a>
-        <a href="https://x.com/ZeroGuysNFT/status/2124413682977587311" target="_blank" rel="noopener noreferrer">Zero Guys 核验器（已排除）<small>x.com · 2026-11-22</small></a>
+    <section id="view-joined" class="view" data-view="joined">
+      <h2>已参与的项目</h2>
+      <p class="lede">实际参与过的免费 mint、空投或白名单会按项目分类写在这里，包括所在链、成本、收益金额和百分比。</p>
+      <div class="panel empty">
+        <strong>还没有参与任何项目</strong>
+        目前没有已参与记录，因此没有收益数字，也不会编造。真正参与之后，每个项目会单独列出：时间、链、做了什么、手续费、结果和百分比。
       </div>
     </section>
 
-    <footer>本页每次扫描或操作后都会更新，浏览器大约每 60 秒自动刷新。页面只放监控结论、操作记录和公开地址，不会写入私钥或助记词。</footer>
-  </div>
+    <section id="view-trades" class="view" data-view="trades">
+      <h2>代币交易</h2>
+      <p class="lede">买卖过的币会按币种分类写在这里，包括所在链、手续费、收益，以及当时为什么判断它能涨。</p>
+      <div class="panel empty">
+        <strong>还没有代币买卖</strong>
+        目前没有交易记录，因此没有手续费或盈亏数字，也不会编造。真正交易之后，会按币种列出：链、买入和卖出、手续费、收益或亏损、百分比、判断理由。
+      </div>
+    </section>
+
+    <section id="view-lessons" class="view" data-view="lessons">
+      <h2>操作心得</h2>
+      <p class="lede">每笔实际参与或交易后都会写心得：亏了要写清为什么亏、哪些地方没注意到；赚了要分清是靠判断和注意，还是靠运气。</p>
+      <div class="panel empty">
+        <strong>还没有实际操作</strong>
+        发出交易数为 0，因此还没有心得可写。有了真实操作后，记录会按时间列在这里，不会编造数字。
+      </div>
+      <section class="block">
+        <h2>操作纪律</h2>
+        <ul>
+          <li>不可梭哈，必须留后路，也要留足够 gas。</li>
+          <li>优先参与手续费便宜的网络；像以太坊主网这类 gas 很高的网络，必须有十足把握能赚钱才参与。</li>
+          <li>没有你在对话里的明确同意，不会签名或花费。</li>
+        </ul>
+      </section>
+    </section>
+
+    <footer>点顶部导航可切换分类，不必在同一页里一直往下翻。每次扫描或操作后都会更新这一页，浏览器大约每 60 秒自动刷新，并会停留在你当前看的分类。页面只放监控结论、余额、操作记录和公开地址，不会写入私钥或助记词。</footer>
+  </main>
   <script>
-    const buttons = document.querySelectorAll(".toolbar button");
-    buttons.forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const filter = btn.getAttribute("data-filter");
-        document.body.classList.remove("filter-go", "filter-watch", "filter-no");
-        if (filter !== "all") document.body.classList.add("filter-" + filter);
-        buttons.forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
+    const views = ["overview", "wallet", "go", "watch", "reject", "joined", "trades", "lessons"];
+    const links = document.querySelectorAll("nav.tabs a");
+    function currentView() {
+      const id = (location.hash || "#overview").slice(1);
+      return views.includes(id) ? id : "overview";
+    }
+    function show(id) {
+      document.querySelectorAll(".view").forEach((el) => {
+        el.classList.toggle("is-active", el.getAttribute("data-view") === id);
       });
-    });
+      links.forEach((a) => {
+        const on = a.getAttribute("data-view") === id;
+        if (on) a.setAttribute("aria-current", "page");
+        else a.removeAttribute("aria-current");
+      });
+      if (id !== "overview") window.scrollTo(0, 0);
+    }
+    window.addEventListener("hashchange", () => show(currentView()));
+    show(currentView());
     document.querySelectorAll(".copy").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const text = btn.getAttribute("data-copy") || "";
@@ -631,6 +813,7 @@
         }
       });
     });
+    setTimeout(() => location.reload(), 60000);
   </script>
 </body>
 </html>
